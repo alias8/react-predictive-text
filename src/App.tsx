@@ -1,26 +1,48 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { ChangeEvent } from "react";
+import "./App.css";
+import { TrieWrapper } from "./TrieWrapper";
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+interface IState {
+  text: string;
+  suggestions: string[];
+}
+
+class App extends React.Component<{}, IState> {
+  constructor(props: any) {
+    super(props);
+    this.state = {
+      text: "",
+      suggestions: [],
+    };
+  }
+
+  handleTextChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    this.setState({
+      text: event.target.value,
+    });
+  };
+
+  handleSuggestions = (suggestions: string[]) => {
+    this.setState({
+      suggestions,
+    });
+  };
+
+  // event: ChangeEvent<HTMLTextAreaElement>
+  render() {
+    const { text, suggestions } = this.state;
+    return (
+      <div className="App">
+        <TrieWrapper text={text} sendSuggestions={this.handleSuggestions} />
+        <textarea
+          value={suggestions}
+          readOnly={true}
+          style={{ color: "green" }}
+        />
+        <textarea onChange={this.handleTextChange} value={text} />
+      </div>
+    );
+  }
 }
 
 export default App;
