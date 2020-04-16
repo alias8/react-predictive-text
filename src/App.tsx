@@ -1,10 +1,11 @@
 import React, { ChangeEvent } from "react";
 import "./App.css";
 import { TrieWrapper } from "./TrieWrapper";
+import { IWord } from "./Trie";
 
 interface IState {
   text: string;
-  suggestions: string[];
+  suggestions: IWord[];
 }
 
 class App extends React.Component<{}, IState> {
@@ -12,7 +13,11 @@ class App extends React.Component<{}, IState> {
     super(props);
     this.state = {
       text: "",
-      suggestions: [],
+      suggestions: [
+        {
+          word: "",
+        },
+      ],
     };
   }
 
@@ -22,24 +27,30 @@ class App extends React.Component<{}, IState> {
     });
   };
 
-  handleSuggestions = (suggestions: string[]) => {
+  handleSuggestions = (suggestions: IWord[]) => {
     this.setState({
       suggestions,
     });
   };
 
-  // event: ChangeEvent<HTMLTextAreaElement>
   render() {
     const { text, suggestions } = this.state;
     return (
       <div className="App">
         <TrieWrapper text={text} sendSuggestions={this.handleSuggestions} />
         <textarea
-          value={suggestions}
+          className={"textbox suggestions"}
+          value={suggestions
+            .map((suggestion) => `${suggestion.word} ${suggestion.rank}`)
+            .join("\n")}
           readOnly={true}
           style={{ color: "green" }}
         />
-        <textarea onChange={this.handleTextChange} value={text} />
+        <textarea
+          className={"textbox"}
+          onChange={this.handleTextChange}
+          value={text}
+        />
       </div>
     );
   }

@@ -36,3 +36,18 @@
     transform: rotate(360deg);
   }
 }
+
+.textbox {
+  display: inline-block;
+  margin: auto 0;
+  width: 1000px;
+  height: 500px;
+  margin-top: 200px;
+}
+
+.textbox.suggestions {
+  width: 200px;
+  background-color: lightgray;
+}
+
+
