@@ -1,3 +1,106 @@
+import { createMachine, interpret, Machine } from "xstate";
+import sizeof from "object-sizeof";
+
+interface IObj {
+  id: string;
+  initial: string;
+  states: {
+    // @ts-ignore
+    _end: {
+      type: "final";
+    };
+    _start: {
+      on: {
+        [char: string]: string;
+      };
+    };
+    [char: string]: {
+      on: {
+        [char: string]: string;
+      };
+    };
+  };
+}
+
+const obj2: IObj = {
+  id: "FSM",
+  initial: "_start",
+  states: {
+    _end: {
+      // @ts-ignore
+      type: "final",
+    },
+    _start: {
+      on: {},
+    },
+  },
+};
+
+fetch("/text.txt")
+  .then((r) => r.text())
+  .then((text) => {
+    const words = text
+      .split("\n")
+      .sort((a, b) => (a < b ? -1 : 1))
+      .map((word, index) => ({
+        word,
+        rank: index,
+      }));
+
+    console.time("method 2");
+    words.forEach((word) => {
+      // find longest prefix already in object
+      let longestPrefix = "";
+      for (let i = word.word.length - 1; i > 0; i--) {
+        const prefix = word.word.slice(0, i);
+        if (obj2.states[prefix]) {
+          longestPrefix = prefix;
+          break;
+        }
+      }
+      word.word
+        .split("")
+        .slice(longestPrefix.length)
+        .forEach((letter, index, array) => {
+          const end = array.length - 1 === index;
+          if (!end) {
+            const wordSoFar =
+              longestPrefix + array.slice(0, index + 1).join("");
+            const secondLast = array.length - 2 === index;
+            const nextLetter = array[index + 1];
+            if (wordSoFar.length === 1) {
+              if (!obj2.states._start.on[wordSoFar]) {
+                obj2.states._start.on[wordSoFar] = wordSoFar;
+              }
+            }
+            if (!obj2.states[wordSoFar]) {
+              obj2.states[wordSoFar] = {
+                on: {
+                  [nextLetter]: secondLast ? "_end" : wordSoFar + nextLetter,
+                },
+              };
+            }
+          }
+        });
+    });
+    console.timeEnd("method 2");
+    console.log(
+      `obj size: ${sizeof(obj2) / 10 ** 6}MB, ${
+        Object.keys(obj2.states).length - 2
+      } length`
+    );
+
+    const machine = createMachine(obj2);
+    const toggleService = interpret(machine)
+      .onTransition((state) => {
+        console.log(state.value);
+      })
+      .start();
+    // todo: how to do predictive text with this?
+    toggleService.send("D");
+    toggleService.send("O");
+  });
+
 export interface Node1 {
   isCompleteWord: boolean;
   rank?: number;
