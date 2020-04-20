@@ -1,6 +1,6 @@
 import React from "react";
 import { IWord, Node1, Trie } from "./Trie";
-import { last } from "lodash";
+import { last, range } from "lodash";
 import sizeof from "object-sizeof";
 
 interface IProps {
@@ -51,24 +51,17 @@ export class TrieWrapper extends React.Component<IProps, IState> {
     }
   }
 
-  findSuggestions = (lastWord: string | undefined): IWord[] => {
+  findSuggestions = (prefix: string | undefined): IWord[] => {
     // for "do" do we show "dog", "dot" or "does"? evaluate completed words 1 or 2 steps away from the current node
 
     // for "wheneve", the predicted word is "whenever" but we could have predicted that if we search 4 nodes ahead when on "when"
-    if (lastWord) {
-      const node = this.state.trie.findNode(lastWord);
+    if (prefix) {
+      const node = this.state.trie.findNode(prefix);
       if (node) {
-        const oneLetterMore = this.getWordsOneLetterMore(node, lastWord);
-        const twoLettersMore = this.getWordsTwoLettersAhead(node, lastWord);
-        const threeLettersMore = this.getWordsThreeLettersAhead(node, lastWord);
-        const fourLettersMore = this.getWordsFourLettersAhead(node, lastWord);
-
-        return [
-          ...oneLetterMore,
-          ...twoLettersMore,
-          ...threeLettersMore,
-          ...fourLettersMore,
-        ].sort((a, b) => a.rank! - b.rank!);
+        return range(1, 7)
+          .map((ahead) => this.getWordsXLettersAhead(node, prefix, ahead))
+          .reduce((curr, prev) => [...curr, ...prev], [])
+          .sort((a, b) => a.rank! - b.rank!);
       } else {
         return [{ word: "no node", rank: undefined }];
       }
@@ -77,42 +70,35 @@ export class TrieWrapper extends React.Component<IProps, IState> {
     }
   };
 
-  getWordsFourLettersAhead = (node: Node1, lastWord: string) =>
-    Object.entries(node.children)
-      .map(([key, node], index, array) =>
-        this.getWordsThreeLettersAhead(node, lastWord + key)
-      )
-      .reduce((prev, current) => [...prev, ...current], []);
-
-  getWordsThreeLettersAhead = (node: Node1, lastWord: string) =>
-    Object.entries(node.children)
-      .map(([key, node], index, array) =>
-        this.getWordsTwoLettersAhead(node, lastWord + key)
-      )
-      .reduce((prev, current) => [...prev, ...current], []);
-
-  getWordsTwoLettersAhead = (node: Node1, lastWord: string) =>
-    Object.entries(node.children)
-      .map(([key, node], index, array) =>
-        this.getWordsOneLetterMore(node, lastWord + key)
-      )
-      .reduce((prev, current) => [...prev, ...current], []);
-
-  getWordsOneLetterMore = (node: Node1, prefix: string): IWord[] => {
-    const children = Object.entries(node.children).length;
-    const completeChildren = Object.entries(node.children).filter(
-      ([key, value]) => value.isCompleteWord
-    ).length;
-    console.log(
-      `prefix: ${prefix} searching ${children} children, ${completeChildren} are complete`
-    );
-    return Object.entries(node.children)
-      .filter(([key, value]) => value.isCompleteWord)
-      .sort((a, b) => a[1].rank! - b[1].rank!)
-      .map(([nextLetter, value]) => ({
-        word: prefix + nextLetter,
-        rank: value.rank,
-      }));
+  getWordsXLettersAhead = (
+    node: Node1,
+    prefix: string,
+    ahead: number
+  ): IWord[] => {
+    const getWordsOneLetterMore = (node: Node1, prefix: string): IWord[] => {
+      return Object.entries(node.children)
+        .filter(([key, value]) => value.isCompleteWord)
+        .sort((a, b) => a[1].rank! - b[1].rank!)
+        .map(([nextLetter, value]) => ({
+          word: prefix + nextLetter,
+          rank: value.rank,
+        }));
+    };
+    if (ahead < 0) {
+      throw Error("ahead must be a positive integer");
+    } else if (ahead === 1) {
+      return getWordsOneLetterMore(node, prefix);
+    } else {
+      return Object.entries(node.children)
+        .map(([key, node], index, array) => {
+          if (ahead === 2) {
+            return getWordsOneLetterMore(node, prefix + key);
+          } else {
+            return this.getWordsXLettersAhead(node, prefix + key, ahead - 1);
+          }
+        })
+        .reduce((prev, current) => [...prev, ...current], []);
+    }
   };
 
   render() {
