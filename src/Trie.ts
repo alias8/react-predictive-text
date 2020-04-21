@@ -36,7 +36,7 @@ const obj2: IObj = {
   },
 };
 
-fetch("/text.txt")
+fetch("/text2.txt")
   .then((r) => r.text())
   .then((text) => {
     const words = text
@@ -50,22 +50,23 @@ fetch("/text.txt")
     console.time("method 2");
     words.forEach((word) => {
       // find longest prefix already in object
-      let longestPrefix = "";
-      for (let i = word.word.length - 1; i > 0; i--) {
-        const prefix = word.word.slice(0, i);
-        if (obj2.states[prefix]) {
-          longestPrefix = prefix;
-          break;
-        }
-      }
+      // let longestPrefix = "";
+      // for (let i = word.word.length - 1; i > 0; i--) {
+      //   const prefix = word.word.slice(0, i);
+      //   if (obj2.states[prefix]) {
+      //     longestPrefix = prefix;
+      //     break;
+      //   }
+      // }
       word.word
         .split("")
-        .slice(longestPrefix.length)
+        // .slice(longestPrefix.length)
         .forEach((letter, index, array) => {
           const end = array.length - 1 === index;
           if (!end) {
-            const wordSoFar =
-              longestPrefix + array.slice(0, index + 1).join("");
+            // const wordSoFar =
+            //   longestPrefix + array.slice(0, index + 1).join("");
+            const wordSoFar = array.slice(0, index + 1).join("");
             const secondLast = array.length - 2 === index;
             const nextLetter = array[index + 1];
             if (wordSoFar.length === 1) {
@@ -96,9 +97,10 @@ fetch("/text.txt")
         console.log(state.value);
       })
       .start();
-    // todo: how to do predictive text with this?
+    // todo: how to do predictive text with this? I don't think this will work, try this: http://pages.pathcom.com/~vadco/dawg.html
     toggleService.send("D");
     toggleService.send("O");
+    const gg = 2;
   });
 
 export interface Node1 {
